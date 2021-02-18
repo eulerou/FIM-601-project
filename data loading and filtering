@@ -1,4 +1,5 @@
 from dask import dataframe as dd
+import os
 
 colname = ["POOL_ID", "LOAN_ID", "ACT_PERIOD", "CHANNEL", "SELLER", "SERVICER",
                         "MASTER_SERVICER", "ORIG_RATE", "CURR_RATE", "ORIG_UPB", "ISSUANCE_UPB",
@@ -33,8 +34,10 @@ colname = ["POOL_ID", "LOAN_ID", "ACT_PERIOD", "CHANNEL", "SELLER", "SERVICER",
 
 column_names = {n:name for (n,name) in enumerate(colname)}
 
-#the index of some preliminary columns that we will use later
-relevant = [i-1 for i in [1,2,3,4,5,6,8,9,
+# the index of some preliminary columns that we will use later
+# check the glossary file and check "Date Bound Notes" and "Single-Family (SF) Loan Performance" columns to remove columns where data are unavailable
+# then check the description column to see whether the rest of them are useful
+relevant = [i-1 for i in [2,3,4,5,6,8,9,
                           10,12,13,16,17,18,20,21,23,24,25,26,27,28,
                           30,31,32,35,36,
                           40,41,42,44,46,
@@ -68,16 +71,17 @@ types ={c:t for (c,t) in zip(colname,typename)}
 # some potential filters that will be used later
 (dask_df.SELLER=='Wells Fargo Bank, N.A.')
 
-#if you save all the quaterly datas in a folder, use this to retrieve a list of file names
+# if you save all the quaterly datas in a folder, use this to retrieve a list of file names
 files = []
 with os.scandir('E:\FNMA data\FNMA data') as entries:
     for file in entries:
         files.append(file)
         
-#read and filter our dataset
+# read and filter our dataset
+# right now I'm just testing the first file since I haven't figure out how to export the filtered file
 dask_df = dd.read_csv(files[0], names=colname, dtype=types, delimiter='|')
-# dask_df = dask_df[(dask_df.STATE=='TX')|(dask_df.STATE=='AZ')]
-# dask_df = dask_df.iloc[:,relevant]
+dask_df = dask_df[(dask_df.STATE=='TX')|(dask_df.STATE=='AZ')]
+dask_df = dask_df.iloc[:,relevant]
 print(dask_df.head())
 
 # this is to check if you are not sure if some column cantain all NA values
