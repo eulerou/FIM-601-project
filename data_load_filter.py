@@ -72,26 +72,23 @@ types ={c:t for (c,t) in zip(colname,typename)}
 (dask_df.SELLER=='Wells Fargo Bank, N.A.')
 
 # if you save all the quaterly datas in a folder, use this to retrieve a list of file names
-files = []
-with os.scandir('E:\FNMA data\FNMA data') as entries:
-    for file in entries:
-        files.append(file)
+# files = []
+# with os.scandir('E:\FNMA data\FNMA data') as entries:
+#     for file in entries:
+#         files.append(file)
         
 # or we can simply read multiple csv files as follows:
-# dask_df = dd.read_csv('E:/FNMA data/FNMA data/2006*.csv', names=colname, dtype=types, delimiter='l') # to read 2006 data
+dask_df = dd.read_csv('E:/FNMA data/FNMA data/2006*.csv', names=colname, dtype=types, delimiter='l') # to read 2006 data
 # dask_df = dd.read_csv('E:/FNMA data/FNMA data/20*.csv', names=colname, dtype=types, delimiter='l') # to read all the data
         
 # read and filter our dataset
-dask_df = dd.read_csv(files[0], names=colname, dtype=types, delimiter='|')
+dask_df = dd.read_csv(filename, names=colname, dtype=types, delimiter='|')
 dask_df = dask_df[(dask_df.STATE=='TX')|(dask_df.STATE=='AZ')]
 dask_df = dask_df.iloc[:,relevant]
 print(dask_df.head())
 
-# we can use this to check if a particular column has no data at all
-# print(dask_df.loc[:,'FORECLOSURE_PRINCIPAL_WRITE_OFF_AMOUNT'].isna().sum().compute())
+# this is to check if you are not sure if some column cantain no values at all
+# print(dask_df.loc[:,'HIGH_BALANCE_LOAN_INDICATOR'].isna().sum().compute())
 
 # export the filtered dataset
 # dask_df = dd.to_csv(filename, single_file=TRUE)
-
-# this is to check if you are not sure if some column cantain all NA values
-# print(dask_df.loc[:,'HIGH_BALANCE_LOAN_INDICATOR'].isna().sum().compute())
