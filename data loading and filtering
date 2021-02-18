@@ -44,7 +44,7 @@ relevant = [i-1 for i in [2,3,4,5,6,8,9,
                           54,55,56,57,58,59,
                           60,61,62,63,
                           73,74,
-                          80,81,87]]
+                          80,81]]
 # print({n:name for (n,name) in column_names.items() if n in relevant})
 
 typename = ["str", "str", "str", "str", "str", "str",
@@ -77,12 +77,21 @@ with os.scandir('E:\FNMA data\FNMA data') as entries:
     for file in entries:
         files.append(file)
         
+# or we can simply read multiple csv files as follows:
+# dask_df = dd.read_csv('E:/FNMA data/FNMA data/2006*.csv', names=colname, dtype=types, delimiter='l') # to read 2006 data
+# dask_df = dd.read_csv('E:/FNMA data/FNMA data/20*.csv', names=colname, dtype=types, delimiter='l') # to read all the data
+        
 # read and filter our dataset
-# right now I'm just testing the first file since I haven't figure out how to export the filtered file
 dask_df = dd.read_csv(files[0], names=colname, dtype=types, delimiter='|')
 dask_df = dask_df[(dask_df.STATE=='TX')|(dask_df.STATE=='AZ')]
 dask_df = dask_df.iloc[:,relevant]
 print(dask_df.head())
+
+# we can use this to check if a particular column has no data at all
+# print(dask_df.loc[:,'FORECLOSURE_PRINCIPAL_WRITE_OFF_AMOUNT'].isna().sum().compute())
+
+# export the filtered dataset
+# dask_df = dd.to_csv(filename, single_file=TRUE)
 
 # this is to check if you are not sure if some column cantain all NA values
 # print(dask_df.loc[:,'HIGH_BALANCE_LOAN_INDICATOR'].isna().sum().compute())
