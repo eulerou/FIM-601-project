@@ -88,7 +88,7 @@ dask_df = dask_df.iloc[:,relevant]
 print(dask_df.head())
 
 # this is to check if you are not sure if some column cantain no values at all
-# print(dask_df.loc[:,'HIGH_BALANCE_LOAN_INDICATOR'].isna().sum().compute())
+# print(dask_df.HIGH_BALANCE_LOAN_INDICATOR.count().compute())
 
 # export the filtered dataset
 # dask_df = dd.to_csv(filename, single_file=TRUE)
