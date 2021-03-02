@@ -80,7 +80,7 @@ dask_df = dask_df[(dask_df.STATE=='TX')|(dask_df.STATE=='AZ')]
 dask_df = dask_df.iloc[:,relevant]
 
 # zero balance code 
-# exclude cases with zbc=='06', '15', '16', '96', '97', '98' after checking the data
+# exclude cases with zbc=='06', '16', '96', '97', '98' after checking the data
 # dask_df[dask_df.Zero_Bal_Code=='15']
 dask_df = dask_df[dask_df.Zero_Bal_Code.isin(['02','03','09','15'])]
 
