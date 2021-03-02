@@ -37,16 +37,9 @@ column_names = {n:name for (n,name) in enumerate(colname)}
 # the index of some preliminary columns that we will use later
 # check the glossary file and check "Date Bound Notes" and "Single-Family (SF) Loan Performance" columns to remove columns where data are unavailable
 # then check the description column to see whether the rest of them are useful
-relevant = [i-1 for i in [2,3,4,5,6,8,9,
-                          10,12,13,16,17,18,20,21,23,24,25,26,27,28,
-                          30,31,32,35,36,
-                          40,41,42,44,46,
-                          54,55,56,57,58,59,
-                          60,61,62,63,
-                          73,74,
-                          80,81]]
-# print({n:name for (n,name) in column_names.items() if n in relevant})
+relevant = [1,7,11,13,15,19,20,22,23,26,27,33,40,43,45,53,54,55,56,58,59,60,61]
 
+# print({n:name for (n,name) in column_names.items() if n in relevant})
 typename = ["str", "str", "str", "str", "str", "str",
                           "str", "float64", "float64", "float64", "float64",
                           "float64", "float64", "str", "str", "float64", "float64",
@@ -69,7 +62,7 @@ typename = ["str", "str", "str", "str", "str", "str",
 types ={c:t for (c,t) in zip(colname,typename)}
 
 # some potential filters that will be used later
-(dask_df.SELLER=='Wells Fargo Bank, N.A.')
+# (dask_df.SELLER=='Wells Fargo Bank, N.A.')
 
 # if you save all the quaterly datas in a folder, use this to retrieve a list of file names
 # files = []
@@ -78,17 +71,21 @@ types ={c:t for (c,t) in zip(colname,typename)}
 #         files.append(file)
         
 # or we can simply read multiple csv files as follows:
-dask_df = dd.read_csv('E:/FNMA data/FNMA data/2006*.csv', names=colname, dtype=types, delimiter='l') # to read 2006 data
-# dask_df = dd.read_csv('E:/FNMA data/FNMA data/20*.csv', names=colname, dtype=types, delimiter='l') # to read all the data
+# dask_df = dd.read_csv('E:/FNMA data/FNMA data/2006*.csv', names=colname, dtype=types, delimiter='l') # to read 2006 data
+dask_df = dd.read_csv('E:/FNMA data/FNMA data/20*.csv', names=colname, dtype=types, delimiter='l') # to read all the data
         
 # read and filter our dataset
 dask_df = dd.read_csv(filename, names=colname, dtype=types, delimiter='|')
 dask_df = dask_df[(dask_df.STATE=='TX')|(dask_df.STATE=='AZ')]
 dask_df = dask_df.iloc[:,relevant]
-print(dask_df.head())
+
+# zero balance code 
+# exclude cases with zbc=='06', '15', '16', '96', '97', '98' after checking the data
+# dask_df[dask_df.Zero_Bal_Code=='15']
+dask_df = dask_df[dask_df.Zero_Bal_Code.isin(['02','03','09','15'])]
 
 # this is to check if you are not sure if some column cantain no values at all
 # print(dask_df.HIGH_BALANCE_LOAN_INDICATOR.count().compute())
 
 # export the filtered dataset
-# dask_df = dd.to_csv(filename, single_file=TRUE)
+dask_df = dd.to_csv(filename, single_file=TRUE)
