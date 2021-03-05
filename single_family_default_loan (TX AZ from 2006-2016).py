@@ -1,5 +1,6 @@
 from dask import dataframe as dd
-import os
+import numpy as np
+from datetime import datetime
 
 colname = ["POOL_ID", "LOAN_ID", "ACT_PERIOD", "CHANNEL", "SELLER", "SERVICER",
                         "MASTER_SERVICER", "ORIG_RATE", "CURR_RATE", "ORIG_UPB", "ISSUANCE_UPB",
@@ -34,12 +35,6 @@ colname = ["POOL_ID", "LOAN_ID", "ACT_PERIOD", "CHANNEL", "SELLER", "SERVICER",
 
 column_names = {n:name for (n,name) in enumerate(colname)}
 
-# the index of some preliminary columns that we will use later
-# check the glossary file and check "Date Bound Notes" and "Single-Family (SF) Loan Performance" columns to remove columns where data are unavailable
-# then check the description column to see whether the rest of them are useful
-relevant = [1,7,11,13,15,19,20,22,23,26,27,33,40,43,45,53,54,55,56,58,59,60,61]
-
-# print({n:name for (n,name) in column_names.items() if n in relevant})
 typename = ["str", "str", "str", "str", "str", "str",
                           "str", "float64", "float64", "float64", "float64",
                           "float64", "float64", "str", "str", "float64", "float64",
@@ -61,31 +56,56 @@ typename = ["str", "str", "str", "str", "str", "str",
                           "str", "str", "str", "str","str", "float64", "float64"]
 types ={c:t for (c,t) in zip(colname,typename)}
 
-# some potential filters that will be used later
-# (dask_df.SELLER=='Wells Fargo Bank, N.A.')
+# read all the loans from 2006 to 2016
+df = dd.read_csv('E:/FNMA data/FNMA data/20*.csv', names=colname, dtype=types, delimiter='|')
+# select loans in Texas and Arizona
+df = df[(df.STATE=='TX')|(df.STATE=='AZ')]
 
-# if you save all the quaterly datas in a folder, use this to retrieve a list of file names
-# files = []
-# with os.scandir('E:\FNMA data\FNMA data') as entries:
-#     for file in entries:
-#         files.append(file)
-        
-# or we can simply read multiple csv files as follows:
-# dask_df = dd.read_csv('E:/FNMA data/FNMA data/2006*.csv', names=colname, dtype=types, delimiter='l') # to read 2006 data
-dask_df = dd.read_csv('E:/FNMA data/FNMA data/20*.csv', names=colname, dtype=types, delimiter='l') # to read all the data
-        
-# read and filter our dataset
-dask_df = dd.read_csv(filename, names=colname, dtype=types, delimiter='|')
-dask_df = dask_df[(dask_df.STATE=='TX')|(dask_df.STATE=='AZ')]
-dask_df = dask_df.iloc[:,relevant]
+relevant = [1,2,7,8,11,13,15,19,20,22,23,24,26,27,33,40,43,45,50,51,52,53,54,55,56,57,58,59,60,61,62,63]
+# print({n:name for (n,name) in column_names.items() if n in relevant})
+df = df.iloc[:,relevant]
 
-# zero balance code 
-# exclude cases with zbc=='06', '16', '96', '97', '98' after checking the data
-# dask_df[dask_df.Zero_Bal_Code=='15']
-dask_df = dask_df[dask_df.Zero_Bal_Code.isin(['02','03','09','15'])]
+# make sure current rate is available at disposition
+df['CURR_RATE'] = df.CURR_RATE.fillna(method='ffill')
+# loan age at foreclosure
+df['LOAN_AGE'] = df.LOAN_AGE.fillna(method='ffill')+1
 
-# this is to check if you are not sure if some column cantain no values at all
-# print(dask_df.HIGH_BALANCE_LOAN_INDICATOR.count().compute())
+# select rows which goes into disposition
+df = df[df.Zero_Bal_Code.isin(['02','03','09','15'])]
 
-# export the filtered dataset
-dask_df = dd.to_csv(filename, single_file=TRUE)
+# fill NaN with 0 for each disposition related column
+for col in df.columns[-11:]:
+    df[col] = df[col].fillna(0)
+    
+# if last_upb is NaN, use current_upb
+df['LAST_UPB'] = df['LAST_UPB'].mask(df.LAST_UPB.isna(), df.CURRENT_UPB)
+
+# define the last activity date to be the disposition date, or the last act_period if disp_date is NaN
+df['LAST_ACTIVITY_DATE'] = df['DISPOSITION_DATE'].mask(df.DISPOSITION_DATE.isna(), df.ACT_PERIOD)
+
+# represent the date of origination, last paid installment and last activity as the number: 12*(year % 100) + month (e.g. 32016 -> 16*12+3, 112015 -> 15*12+11)
+df['ORIG'] = df.ORIG_DATE.map(lambda x: float(x)%100, meta=('ORIG_DATE',float))*12\
+           + df.ORIG_DATE.map(lambda x: (float(x)-float(x)%10000)/10000, meta=('ORIG_DATE',float))
+df['LPI'] = df.LAST_PAID_INSTALLMENT_DATE.map(lambda x: float(x)%100, meta=('LAST_PAID_INSTALLMENT_DATE',float))*12\
+           + df.LAST_PAID_INSTALLMENT_DATE.map(lambda x: (float(x)-float(x)%10000)/10000, meta=('LAST_PAID_INSTALLMENT_DATE',float))
+df['LACT'] = df.LAST_ACTIVITY_DATE.map(lambda x: float(x)%100, meta=('LAST_ACTIVITY_DATE',float))*12\
+           + df.LAST_ACTIVITY_DATE.map(lambda x: (float(x)-float(x)%10000)/10000, meta=('LAST_ACTIVITY_DATE',float))
+# months from last paid installment date to disposition date
+df['LPI2DISP'] = df.LACT-df.LPI
+
+# accrued delinquent interest 
+df['ACCRUED_INTEREST'] = (df.LAST_UPB - df.NON_INTEREST_BEARING_UPB)*(df.CURR_RATE/100-0.0035)*(df.LPI2DISP/12)
+# net proceeds from disposition
+df['DISP_NET_PROCEEDS'] = (df.NET_SALES_PROCEEDS + df.CREDIT_ENHANCEMENT_PROCEEDS + df.REPURCHASES_MAKE_WHOLE_PROCEEDS + df.OTHER_FORECLOSURE_PROCEEDS)\
+                        - (df.FORECLOSURE_COSTS + df.PROPERTY_PRESERVATION_AND_REPAIR_COSTS + df.ASSET_RECOVERY_COSTS + df.MISCELLANEOUS_HOLDING_EXPENSES_AND_CREDITS + df.PRINCIPAL_FORGIVENESS_AMOUNT)
+
+# calculate the net loss
+df['NET_LOSS'] = df.LAST_UPB + df.ACCRUED_INTEREST - df['DISP_NET_PROCEEDS'] # notice that some of the loan have negative net loss
+# if the disposition has not been completed (so that proceeds and cost entries are all NaNs), set net loss to be np.nan. 
+df['NET_LOSS'] = df['NET_LOSS'].mask(df['DISP_NET_PROCEEDS']==0, np.nan)
+# divide net loss by upb at foreclosure to obtain loss severity
+df['LOSS_SEVERITY'] = df.NET_LOSS/df.LAST_UPB
+
+df = df.drop(['ACT_PERIOD','CURRENT_UPB', 'PMT_HISTORY'], axis=1)
+
+# df.to_csv('E:/FNMA data/FNMA data/default_final.csv',single_file=True)
