@@ -106,6 +106,11 @@ df['NET_LOSS'] = df['NET_LOSS'].mask(df['DISP_NET_PROCEEDS']==0, np.nan)
 # divide net loss by upb at foreclosure to obtain loss severity
 df['LOSS_SEVERITY'] = df.NET_LOSS/df.LAST_UPB
 
-df = df.drop(['ACT_PERIOD','CURRENT_UPB', 'PMT_HISTORY'], axis=1)
+df = df.drop(['ACT_PERIOD', 'CURRENT_UPB', 'PMT_HISTORY'], axis=1)
 
 # df.to_csv('E:/FNMA data/FNMA data/default_final.csv',single_file=True)
+
+# Now examine the dataset in Excel to handle loans with missing or strange statistics
+# We will use Filter to look at loans with loss severity >= 1 to check foreclosure proceeds/cost entries
+
+
