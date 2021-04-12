@@ -118,4 +118,109 @@ plt.tight_layout()
 print(len(ls_az_DTI[ls_az_DTI==0])/len(ls_az_DTI))
 print(len(ls_az_NON[ls_az_NON==0])/len(ls_az_NON))
 
+# california, different liquidation type
 
+ls_2 = ca['LOSS__SEVERITY'][ca.Zero_Bal_Code_2==1]
+ls_3 = ca['LOSS__SEVERITY'][ca.Zero_Bal_Code_3==1]
+ls_9 = ca['LOSS__SEVERITY'][ca.Zero_Bal_Code_9==1]
+ls_15 = ca['LOSS__SEVERITY'][ca.Zero_Bal_Code_15==1]
+
+print(len(ca), len(ls_2), len(ls_3), len(ls_9), len(ls_15))
+
+fig,axes = plt.subplots(5,1,figsize=(10,10))
+
+sns.histplot(ca['LOSS__SEVERITY'], stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[0])
+sns.histplot(ls_2,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[1])
+sns.histplot(ls_3,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[2])
+sns.histplot(ls_9,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[3])
+sns.histplot(ls_15,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[4])
+
+plt.tight_layout()
+
+### different property type
+# Arizona
+ls_az_CO = az['LOSS__SEVERITY'][az.PROP_CO==1]
+ls_az_CP = az['LOSS__SEVERITY'][az.PROP_CP==1]
+ls_az_PU = az['LOSS__SEVERITY'][az.PROP_PU==1]
+ls_az_MH = az['LOSS__SEVERITY'][az.PROP_MH==1]
+ls_az_SF = az['LOSS__SEVERITY'][az.PROP_SF==1]
+
+print(len(az), len(ls_az_CO), len(ls_az_CP), len(ls_az_PU), len(ls_az_MH), len(ls_az_SF))
+
+fig,axes = plt.subplots(5,1,figsize=(10,10))
+
+sns.histplot(az['LOSS__SEVERITY'], stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[0])
+sns.histplot(ls_az_CP,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[1])
+sns.histplot(ls_az_PU,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[2])
+sns.histplot(ls_az_MH,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[3])
+sns.histplot(ls_az_SF,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[4])
+
+plt.tight_layout()
+
+# California
+ls_ca_CO = ca['LOSS__SEVERITY'][ca.PROP_CO==1]
+ls_ca_CP = ca['LOSS__SEVERITY'][ca.PROP_CP==1]
+ls_ca_PU = ca['LOSS__SEVERITY'][ca.PROP_PU==1]
+ls_ca_MH = ca['LOSS__SEVERITY'][ca.PROP_MH==1]
+ls_ca_SF = ca['LOSS__SEVERITY'][ca.PROP_SF==1]
+
+print(len(ca), len(ls_ca_CO), len(ls_ca_CP), len(ls_ca_PU), len(ls_ca_MH), len(ls_ca_SF))
+
+fig,axes = plt.subplots(5,1,figsize=(10,10))
+
+sns.histplot(ca['LOSS__SEVERITY'], stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[0])
+sns.histplot(ls_ca_CP,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[1])
+sns.histplot(ls_ca_PU,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[2])
+sns.histplot(ls_ca_MH,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[3])
+sns.histplot(ls_ca_SF,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[4])
+
+plt.tight_layout()
+
+### different purpose of loan
+
+# Arizona 
+ls_az_c = az['LOSS__SEVERITY'][az.PURPOSE_C==1]
+ls_az_p = az['LOSS__SEVERITY'][az.PURPOSE_P==1]
+ls_az_r = az['LOSS__SEVERITY'][az.PURPOSE_R==1]
+
+print(len(az), len(ls_c), len(ls_p), len(ls_r))
+
+fig,axes = plt.subplots(4,1,figsize=(10,10))
+
+sns.histplot(az['LOSS__SEVERITY'], stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[0])
+sns.histplot(ls_az_c,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[1])
+sns.histplot(ls_az_p,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[2])
+sns.histplot(ls_az_r,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[3])
+
+plt.tight_layout()
+
+ls_az_c = az['LOSS__SEVERITY'][az.PURPOSE_C==1]
+ls_az_p = az['LOSS__SEVERITY'][az.PURPOSE_P==1]
+ls_az_r = az['LOSS__SEVERITY'][az.PURPOSE_R==1]
+
+print(len(az), len(ls_c), len(ls_p), len(ls_r))
+
+fig,axes = plt.subplots(4,1,figsize=(10,10))
+
+sns.histplot(az['LOSS__SEVERITY'], stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[0])
+sns.histplot(ls_az_c,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[1])
+sns.histplot(ls_az_p,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[2])
+sns.histplot(ls_az_r,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[3])
+
+plt.tight_layout()
+
+# california
+ls_ca_c = ca['LOSS__SEVERITY'][ca.PURPOSE_C==1]
+ls_ca_p = ca['LOSS__SEVERITY'][ca.PURPOSE_P==1]
+ls_ca_r = ca['LOSS__SEVERITY'][ca.PURPOSE_R==1]
+
+print(len(ca), len(ls_ca_c), len(ls_ca_p), len(ls_ca_r))
+
+fig,axes = plt.subplots(4,1,figsize=(10,10))
+
+sns.histplot(ca['LOSS__SEVERITY'], stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[0])
+sns.histplot(ls_ca_c,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[1])
+sns.histplot(ls_ca_p,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[2])
+sns.histplot(ls_ca_r,stat='probability',binwidth=0.01, binrange=(0,1), ax=axes[3])
+
+plt.tight_layout()
