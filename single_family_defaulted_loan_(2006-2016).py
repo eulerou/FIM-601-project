@@ -2,6 +2,9 @@ from dask import dataframe as dd
 import numpy as np
 from datetime import datetime
 
+# we follow the Credit Performance Analysis Tutorial by FNMA on 
+# https://capitalmarkets.fanniemae.com/credit-risk-transfer/single-family-credit-risk-transfer/fannie-mae-single-family-loan-performance-data
+
 colname = ["POOL_ID", "LOAN_ID", "ACT_PERIOD", "CHANNEL", "SELLER", "SERVICER",
                         "MASTER_SERVICER", "ORIG_RATE", "CURR_RATE", "ORIG_UPB", "ISSUANCE_UPB",
                         "CURRENT_UPB", "ORIG_TERM", "ORIG_DATE", "FIRST_PAY", "LOAN_AGE",
@@ -57,23 +60,27 @@ typename = ["str", "str", "str", "str", "str", "str",
 types ={c:t for (c,t) in zip(colname,typename)}
 
 # read all the loans from 2006 to 2016
-df = dd.read_csv('E:/FNMA data/FNMA data/20*.csv', names=colname, dtype=types, delimiter='|')
-# select loans in Texas and Arizona
-df = df[(df.STATE=='TX')|(df.STATE=='AZ')]
+# Here, specify a folder that contains all required file
+from dask import dataframe as dd
+import numpy as np
+from datetime import datetime
 
-relevant = [1,2,7,8,11,13,15,19,20,22,23,24,26,27,33,40,43,45,50,51,52,53,54,55,56,57,58,59,60,61,62,63]
-# print({n:name for (n,name) in column_names.items() if n in relevant})
+relevant = [1,2,7,8,11,13,15,19,20,22,23,24,26,27,30,33,43,45,50,51,52,53,54,55,56,57,58,59,60,61,62,63]
+df = dd.read_csv('E:/FNMA data/FNMA data/20*.csv', names=colname, dtype=types, delimiter='|')   
 df = df.iloc[:,relevant]
 
 # make sure current rate is available at disposition
 df['CURR_RATE'] = df.CURR_RATE.fillna(method='ffill')
-# loan age at foreclosure
+# loan age at default
 df['LOAN_AGE'] = df.LOAN_AGE.fillna(method='ffill')+1
 
-# select rows which goes into disposition
+# for each loan, set dti to be the last available dti in loan life. NaN if it never exists
+# filldti = df.groupby('LOAN_ID')['DTI'].transform(lambda x: x.mean(), meta=('float'))
+
+#  select loans with liquidation types corresponding to {2:third party sale, 3:short sale, 9:deed-in-lieu, 15:notes sales}
 df = df[df.Zero_Bal_Code.isin(['02','03','09','15'])]
 
-# fill NaN with 0 for each disposition related column
+# fill NaN with 0 for each loss related column
 for col in df.columns[-11:]:
     df[col] = df[col].fillna(0)
     
@@ -83,7 +90,8 @@ df['LAST_UPB'] = df['LAST_UPB'].mask(df.LAST_UPB.isna(), df.CURRENT_UPB)
 # define the last activity date to be the disposition date, or the last act_period if disp_date is NaN
 df['LAST_ACTIVITY_DATE'] = df['DISPOSITION_DATE'].mask(df.DISPOSITION_DATE.isna(), df.ACT_PERIOD)
 
-# represent the date of origination, last paid installment and last activity as the number: 12*(year % 100) + month (e.g. 32016 -> 16*12+3, 112015 -> 15*12+11)
+# represent the date of origination, last paid installment and last activity as the number: 12*(year % 100) + month
+# we could definitely format the date columns into date objects, but we chose to do this in SAS later.
 df['ORIG'] = df.ORIG_DATE.map(lambda x: float(x)%100, meta=('ORIG_DATE',float))*12\
            + df.ORIG_DATE.map(lambda x: (float(x)-float(x)%10000)/10000, meta=('ORIG_DATE',float))
 df['LPI'] = df.LAST_PAID_INSTALLMENT_DATE.map(lambda x: float(x)%100, meta=('LAST_PAID_INSTALLMENT_DATE',float))*12\
@@ -106,11 +114,10 @@ df['NET_LOSS'] = df['NET_LOSS'].mask(df['DISP_NET_PROCEEDS']==0, np.nan)
 # divide net loss by upb at foreclosure to obtain loss severity
 df['LOSS_SEVERITY'] = df.NET_LOSS/df.LAST_UPB
 
-df = df.drop(['ACT_PERIOD', 'CURRENT_UPB', 'PMT_HISTORY'], axis=1)
-
-# df.to_csv('E:/FNMA data/FNMA data/default_final.csv',single_file=True)
-
+df = df.drop(['ACT_PERIOD','CURRENT_UPB'], axis=1)
+df.to_csv('E:/FNMA data/FNMA data/default_allstates.csv',single_file=True) 
 # Now examine the dataset in Excel to handle loans with missing or strange statistics
 # We will use Filter to look at loans with loss severity >= 1 to check foreclosure proceeds/cost entries
 
+# Refer to azca.py for extraction of essential information we need for our project
 
